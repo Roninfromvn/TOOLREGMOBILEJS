@@ -1,0 +1,93 @@
+# --------------------------------------------------
+# Node.js
+# --------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+*.log.*
+*.out
+*.err
+nohup.out
+
+# Cache
+.cache/
+.tmp/
+temp/
+*.tmp
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# TypeScript build (nếu dùng TS)
+dist/
+build/
+lib/
+tsconfig.tsbuildinfo
+
+# Playwright / Puppeteer / Automation Tools
+playwright-report/
+test-results/
+coverage/
+.traces/
+*.spec.ts-snapshots
+.screenshots/
+
+# Chrome extension junk
+*.crx
+*.pem
+
+# Browser Storage
+localStorage.json
+sessionStorage.json
+
+# --------------------------------------------------
+# Custom for your project (RegMobile / iXBrowser)
+# --------------------------------------------------
+profiles/
+debug/
+cache/
+dump/
+cookies/
+sessions/
+requests/
+
+# Python virtualenv (phòng khi có script python)
+venv/
+.env/
+*.pyc
+__pycache__/
+
+# Misc
+*.swp
+*.swm
+*.sw?
+*.bak
+*.old
+*.orig

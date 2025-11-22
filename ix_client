@@ -1,0 +1,29 @@
+const axios = require('axios');
+const BASE_URL = "http://127.0.0.1:53200"; // Port của bạn
+
+async function openProfile(profileId) {
+    try {
+        console.log(`[*] Đang mở Profile ID ${profileId}...`);
+        const body = {
+            profile_id: parseInt(profileId),
+            load_profile_info_page: false,
+            fingerprint_config: {
+                ua_type: 2,           // Mobile User Agent
+                hide_debug_panel: "1" // Ẩn thanh debug
+            }
+        };
+        // Dùng endpoint open-with-random-fingerprint cho an toàn
+        const res = await axios.post(`${BASE_URL}/api/v2/profile-open-with-random-fingerprint`, body);
+        if (res.data.data?.ws) return res.data.data.ws;
+        throw new Error(JSON.stringify(res.data));
+    } catch (e) {
+        console.error("❌ Lỗi API iXBrowser:", e.message);
+        return null;
+    }
+}
+
+async function closeProfile(profileId) {
+    try { await axios.post(`${BASE_URL}/api/v2/profile-close`, { profile_id: parseInt(profileId) }); } catch {}
+}
+
+module.exports = { openProfile, closeProfile };
