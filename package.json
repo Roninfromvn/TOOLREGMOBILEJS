@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "axios": "^1.6.0",
     "puppeteer-core": "^21.0.0"
   }
