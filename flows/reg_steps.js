@@ -368,11 +368,27 @@ async function step_fill_birthdate_mobile(page, day, month, year) {
 async function step_select_gender_mobile(page, sexCode) {
     console.log(`>>> [Step] Chọn Giới tính...`);
     
-    // Check an toàn: Có đúng là đang ở trang giới tính không?
-    const isGenderPage = await page.evaluate(() => !!document.querySelector('input[type="radio"]') || document.body.innerText.toLowerCase().includes("gender"));
+    // [FIX] Check kỹ cả tiếng Anh lẫn Tiếng Việt, và check cả div[role=radio]
+    const isGenderPage = await page.evaluate(() => {
+        const body = document.body.innerText.toLowerCase();
+        return !!document.querySelector('input[type="radio"]') || 
+               !!document.querySelector('div[role="radio"]') ||
+               body.includes("gender") || 
+               body.includes("giới tính") || 
+               body.includes("nam") || 
+               body.includes("nữ");
+    });
+
     if (!isGenderPage) {
-        console.log("⚠️ Lỗi: Browser chưa ở trang Giới tính (Vẫn ở trang cũ). Bỏ qua bước này.");
-        return;
+        // Thử chờ thêm 3s xem mạng lag không
+        console.log("   ... Chưa thấy giao diện Giới tính, đợi 3s...");
+        await sleep(3000);
+        const retryCheck = await page.evaluate(() => document.body.innerText.toLowerCase().match(/gender|giới tính|female|male|nam|nữ/));
+        
+        if (!retryCheck) {
+            console.log("⚠️ Lỗi: Browser chưa ở trang Giới tính (Vẫn ở trang cũ). Bỏ qua bước này.");
+            return;
+        }
     }
 
     // 2: Nam/Male, 1: Nu/Female
@@ -384,25 +400,31 @@ async function step_select_gender_mobile(page, sexCode) {
         
         // 1. Chọn giới tính
         await page.evaluate(async (lbls) => {
-            const radios = Array.from(document.querySelectorAll('div[role="radio"]'));
+            const radios = Array.from(document.querySelectorAll('div[role="radio"], input[type="radio"]'));
+            
+            // Tìm radio khớp label
             const target = radios.find(r => {
-                const aria = r.getAttribute("aria-label") || "";
-                const txt = r.innerText || "";
-                return lbls.some(l => aria.includes(l) || txt.includes(l));
+                const aria = (r.getAttribute("aria-label") || "").toLowerCase();
+                const txt = (r.innerText || "").toLowerCase();
+                // Tìm xem có chứa từ khóa không (nam/nữ/male/female)
+                return lbls.some(l => aria.includes(l.toLowerCase()) || txt.includes(l.toLowerCase()));
             });
 
             if (target) {
-                target.id = "sex_option";
-                await window.Mobile.tap("#sex_option");
+                target.scrollIntoView({block: "center"});
+                // Gán ID tạm
+                if(!target.id) target.id = "sex_option_selected";
+                await window.Mobile.tap("#" + target.id);
             } else if (radios.length > 0) {
-                radios[0].id = "sex_option_random";
-                await window.Mobile.tap("#sex_option_random");
+                // Fallback: Chọn cái đầu tiên nếu không tìm thấy text khớp
+                if(!radios[0].id) radios[0].id = "sex_option_random";
+                await window.Mobile.tap("#" + radios[0].id);
             }
         }, labels);
 
         await sleep(1000);
 
-        // 2. Bấm Next và Đợi chuyển trang (QUAN TRỌNG)
+        // 2. Bấm Next và Đợi chuyển trang
         console.log("   -> Đang tìm nút Next...");
         
         for (let i = 0; i < 5; i++) {
@@ -412,20 +434,22 @@ async function step_select_gender_mobile(page, sexCode) {
             if (!tapped) tapped = await clickNext(page);
 
             if (tapped) {
-                console.log(`   -> Đã bấm Next (Lần ${i+1}). Đang đợi trang nhập SĐT...`);
+                console.log(`   -> Đã bấm Next (Lần ${i+1}). Đang đợi trang nhập SĐT/Email...`);
                 
-                // Chờ 10s xem có sang trang "Mobile Number" không
+                // Chờ 10s xem có sang trang tiếp theo không
                 for (let k = 0; k < 10; k++) {
                     await sleep(1000);
                     
-                    // Dấu hiệu trang tiếp theo (Mobile number)
+                    // Dấu hiệu trang tiếp theo (Mobile number hoặc Email)
                     const isContactPage = await page.evaluate(() => {
                         const body = document.body.innerText.toLowerCase();
                         return !!document.querySelector('input[type="tel"]') || 
+                               !!document.querySelector('input[type="email"]') || 
                                !!document.querySelector('input[name="reg_email__"]') ||
                                body.includes("mobile number") || 
                                body.includes("số di động") ||
-                               body.includes("email address");
+                               body.includes("email address") ||
+                               body.includes("địa chỉ email");
                     });
 
                     if (isContactPage) {
@@ -449,32 +473,46 @@ async function step_switch_to_email(page) {
     // 1. Hàm check xem đã ở form nhập Email chưa?
     const isEmailForm = async () => {
         return await page.evaluate(() => {
-            // Check input type email hoặc name reg_email__
             const input = document.querySelector('input[type="email"]') || document.querySelector('input[name="reg_email__"]');
-            // Check text tiêu đề
             const text = document.body.innerText.toLowerCase();
-            return !!input || text.includes("what's your email") || text.includes("địa chỉ email");
+            // Check thêm các từ khóa tiếng Việt
+            return !!input || text.includes("what's your email") || text.includes("địa chỉ email") || text.includes("nhập email");
         });
     };
 
-    // Nếu đã ở form Email rồi thì skip
     if (await isEmailForm()) {
         console.log("🚀 Đã ở Form Email.");
         return true;
     }
 
-    // 2. Tìm và Tap nút "Sign up with email"
-    console.log("   -> Tìm nút 'Sign up with email'...");
+    console.log("   -> Tìm nút 'Đăng ký bằng email'...");
     
     try {
         const foundBtn = await page.evaluate(async () => {
-            // Lấy tất cả các nút
-            const candidates = Array.from(document.querySelectorAll('div[role="button"], button, span'));
-            // Tìm nút có chữ "email"
-            const target = candidates.find(el => el.innerText.toLowerCase().includes("email"));
+            // Chỉ lấy những thẻ có khả năng là nút cao nhất
+            const candidates = Array.from(document.querySelectorAll('div[role="button"], button, span[role="button"]'));
+            
+            // Logic tìm kiếm ưu tiên
+            const target = candidates.find(el => {
+                // Bỏ qua element ẩn
+                if (el.offsetParent === null) return false;
+
+                const t = el.innerText.toLowerCase().trim();
+                
+                // 1. Khớp chính xác (Ưu tiên số 1)
+                if (t === "đăng ký bằng email") return true;
+                if (t === "sign up with email") return true;
+                if (t === "sign up with email address") return true;
+
+                // 2. Khớp chứa từ khóa (Fallback)
+                // Nhưng phải đảm bảo nó là nút (role=button) để không bấm nhầm text thường
+                if (t.includes("email") && (el.getAttribute('role') === 'button' || el.tagName === 'BUTTON')) {
+                    return true;
+                }
+                return false;
+            });
             
             if (target) {
-                // Cuộn tới
                 target.scrollIntoView({behavior: "auto", block: "center"});
                 const rect = target.getBoundingClientRect();
                 return {
@@ -499,15 +537,15 @@ async function step_switch_to_email(page) {
             }
             console.log("⚠️ Tap rồi nhưng chưa thấy Form Email.");
         } else {
-            console.log("❌ Không tìm thấy nút chuyển Email.");
+            console.log("❌ Không tìm thấy nút chuyển Email (Check lại selector/text).");
         }
     } catch (e) {
         console.log("⚠️ Lỗi thao tác chuyển email:", e.message);
     }
     
-    // Fallback: Check lại lần cuối xem có tự chuyển không
     return await isEmailForm();
 }
+
 
 async function step_fill_email_mobile(page, email) {
     console.log(`>>> [Step] Nhập Email: ${email}`);

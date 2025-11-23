@@ -1,0 +1,2 @@
+1088 | tuan.pham_544_vn@onesecsmail.online | TuanPham@0108 | 2025-11-22 22:39:42 | FAIL: Switch Email Failed | Mozilla/5.0 (Linux; Android 11; CPH2059) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36
+1088 | viet.hoang_321_vn@fantatua.com | VietHoang@1908 | 2025-11-22 22:40:00 | FAIL: Cannot Click Create | Mozilla/5.0 (Linux; Android 10; SM-A125F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36
