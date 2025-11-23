@@ -1,0 +1,2 @@
+1094 | tuan.dang_380_vn@top3tlc.com | TuanDang@0602 | 2025-11-23 09:29:31 | FAIL: Cannot Click Create | Mozilla/5.0 (Linux; Android 11; SM-G780G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36
+1094 | hung.dang_844_vn@onesecsmail.info | HungDang@1612 | 2025-11-23 09:37:46 | FAIL: Cannot Click Create | Mozilla/5.0 (Linux; Android 10; M2010J19SC) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36

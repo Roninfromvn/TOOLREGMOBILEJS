@@ -12,7 +12,8 @@ async function createProfile(name) {
             site_id: 1, 
             fingerprint_config: {
                 ua_type: 2,           // Mobile User Agent
-                hide_debug_panel: "1" // Ẩn thanh debug
+                hide_debug_panel: "1", // Ẩn thanh debug
+                platform: "IOS"
             }
         };
         const res = await axios.post(`${BASE_URL}/api/v2/profile-create`, body);
