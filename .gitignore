@@ -91,3 +91,5 @@ __pycache__/
 *.bak
 *.old
 *.orig
+
+*.txt

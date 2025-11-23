@@ -33,11 +33,11 @@ async function createProfile(name) {
 }
 
 /**
- * Mở Profile với cấu hình Mobile & Random Fingerprint
+ * Mở Profile với cấu hình Mobile & Random Fingerprint (CŨ - GIỮ NGUYÊN)
  */
 async function openProfile(profileId) {
     try {
-        console.log(`[*] Đang mở Profile ID ${profileId}...`);
+        console.log(`[*] Đang mở Profile ID ${profileId} (Random Fingerprint)...`);
         const body = {
             profile_id: parseInt(profileId),
             load_profile_info_page: false,
@@ -47,18 +47,81 @@ async function openProfile(profileId) {
                 platform: "IOS"
             }
         };
-        
         const res = await axios.post(`${BASE_URL}/api/v2/profile-open-with-random-fingerprint`, body);
         
-        // Kiểm tra phản hồi (Ưu tiên lấy ws nếu có data)
         if (res.data.data && res.data.data.ws) {
             return res.data.data.ws;
         }
         
         throw new Error(JSON.stringify(res.data));
     } catch (e) {
-        console.error("❌ Lỗi API iXBrowser (Open):", e.message);
+        console.error("❌ Lỗi API iXBrowser (Open Random):", e.message);
         return null;
+    }
+}
+
+/**
+ * [MỚI] Mở Profile Bình thường (KHÔNG Random)
+ * Dùng cấu hình hiện tại đang được lưu trong Profile
+ */
+async function openProfileNormal(profileId) {
+    try {
+        console.log(`[*] Đang mở Profile ID ${profileId} (Normal Mode)...`);
+        
+        // Theo tài liệu API /api/v2/profile-open
+        const body = {
+            profile_id: parseInt(profileId),
+            load_profile_info_page: false,
+            cookies_backup: true
+        };
+
+        const res = await axios.post(`${BASE_URL}/api/v2/profile-open`, body);
+
+        // Kiểm tra success
+        const isSuccess = (res.data.code === 0) || (res.data.error && res.data.error.code === 0);
+
+        if (isSuccess && res.data.data && res.data.data.ws) {
+            return res.data.data.ws;
+        }
+        
+        throw new Error(JSON.stringify(res.data));
+
+    } catch (e) {
+        console.error("❌ Lỗi API iXBrowser (Open Normal):", e.message);
+        return null;
+    }
+}
+
+/**
+ * [MỚI] Update Cấu hình Profile
+ * Dùng để set Fingerprint thủ công hoặc update Proxy/Note/Name...
+ * @param {number} profileId 
+ * @param {object} updateData - Object chứa các trường cần update (VD: fingerprint_config, proxy_config...)
+ */
+async function updateProfile(profileId, updateData) {
+    try {
+        // Merge profile_id vào body update
+        const body = {
+            profile_id: parseInt(profileId),
+            ...updateData 
+        };
+
+        const res = await axios.post(`${BASE_URL}/api/v2/profile-update`, body);
+
+        // Kiểm tra success
+        const isSuccess = (res.data.code === 0) || (res.data.error && res.data.error.code === 0);
+
+        if (isSuccess) {
+            console.log(`✅ Đã update cấu hình cho Profile ${profileId}`);
+            return true;
+        } else {
+            console.error(`❌ iXBrowser từ chối update:`, JSON.stringify(res.data));
+            return false;
+        }
+
+    } catch (e) {
+        console.error("❌ Lỗi API Update Profile:", e.message);
+        return false;
     }
 }
 
@@ -72,7 +135,7 @@ async function closeProfile(profileId) {
 }
 
 /**
- * Cập nhật Proxy cho Profile (ĐÃ FIX LỖI CODE 0)
+ * Cập nhật Proxy cho Profile (CŨ - GIỮ NGUYÊN)
  */
 async function updateProxy(profileId, proxyData) {
     try {
@@ -81,7 +144,6 @@ async function updateProxy(profileId, proxyData) {
         }
 
         const [ip, port] = proxyData.http_proxy.split(':');
-        
         const body = {
             profile_id: parseInt(profileId),
             proxy_info: {
@@ -93,10 +155,8 @@ async function updateProxy(profileId, proxyData) {
                 proxy_password: proxyData.password || ""
             }
         };
-        
         const res = await axios.post(`${BASE_URL}/api/v2/profile-update-proxy-for-custom-proxy`, body);
         
-        // [FIX QUAN TRỌNG] Kiểm tra cả 2 trường hợp success
         const isSuccess = (res.data.code === 0) || (res.data.error && res.data.error.code === 0);
 
         if(isSuccess) {
@@ -112,4 +172,11 @@ async function updateProxy(profileId, proxyData) {
     }
 }
 
-module.exports = { createProfile, openProfile, closeProfile, updateProxy };
+module.exports = { 
+    createProfile, 
+    openProfile,        // Mở Random
+    openProfileNormal,  // [Mới] Mở Normal
+    updateProfile,      // [Mới] Update Config
+    closeProfile, 
+    updateProxy 
+};
